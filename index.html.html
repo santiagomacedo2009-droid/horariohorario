@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Horário Escolar Interativo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --line-color: #ef4444;
+      
+      /* Cores das Disciplinas */
+      --c-edf: #ea580c;
+      --c-ai: #0284c7;
+      --c-ingles: #2563eb;
+      --c-port: #e11d48;
+      --c-hcart: #d97706;
+      --c-multi1: #9333ea;
+      --c-multi2: #c026d3;
+      --c-multi3: #16a34a;
+      --c-multi4: #0d9488;
+      --c-multi5: #4f46e5;
+      --c-pap: #65a30d;
+      --c-break: #334155;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      padding-bottom: 30px;
+    }
+
+    .app-header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .app-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    .live-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .live-card .info-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .live-card .info-main {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .live-card .info-sub {
+      font-size: 0.8rem;
+      color: var(--accent);
+    }
+
+    /* Controls / Days Selector */
+    .day-selector {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .day-btn {
+      flex: 1;
+      min-width: 55px;
+      padding: 8px 0;
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .day-btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* Schedule Layout */
+    .schedule-container {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 10px;
+      border: 1px solid #334155;
+      overflow: hidden;
+    }
+
+    .time-grid {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .slot-row {
+      display: flex;
+      height: 52px;
+      border-bottom: 1px solid #334155;
+      position: relative;
+    }
+
+    .slot-row:last-child {
+      border-bottom: none;
+    }
+
+    .time-col {
+      width: 55px;
+      min-width: 55px;
+      background: #0f172a;
+      border-right: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .content-col {
+      flex: 1;
+      display: flex;
+      gap: 4px;
+      padding: 3px;
+      position: relative;
+    }
+
+    .card {
+      flex: 1;
+      border-radius: 5px;
+      padding: 4px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card .sub {
+      font-weight: 700;
+      font-size: 0.8rem;
+      line-height: 1.1;
+    }
+
+    .card .room {
+      font-size: 0.65rem;
+      opacity: 0.9;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Class colors */
+    .edf { background-color: var(--c-edf); }
+    .ai { background-color: var(--c-ai); }
+    .ingles { background-color: var(--c-ingles); }
+    .port { background-color: var(--c-port); }
+    .hcart { background-color: var(--c-hcart); }
+    .m1 { background-color: var(--c-multi1); }
+    .m2 { background-color: var(--c-multi2); }
+    .m3 { background-color: var(--c-multi3); }
+    .m4 { background-color: var(--c-multi4); }
+    .m5 { background-color: var(--c-multi5); }
+    .pap { background-color: var(--c-pap); }
+    .break { 
+      background-color: var(--c-break); 
+      color: var(--text-muted);
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Live Progress Bar */
+    #current-time-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--line-color);
+      z-index: 20;
+      box-shadow: 0 0 8px var(--line-color);
+      pointer-events: none;
+      transition: top 0.3s ease;
+      display: none;
+    }
+
+    #current-time-bar::before {
+      content: '';
+      position: absolute;
+      left: 50px;
+      top: -4px;
+      width: 11px;
+      height: 11px;
+      background: var(--line-color);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--line-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <div class="app-title">HORÁRIO ESCOLAR</div>
+  </div>
+
+  <div class="live-card">
+    <div>
+      <div class="info-title">Estado Atual</div>
+      <div class="info-main" id="status-main">A carregar...</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="info-title">Próxima Aula</div>
+      <div class="info-sub" id="status-next">--</div>
+    </div>
+  </div>
+
+  <div class="day-selector">
+    <button class="day-btn" onclick="selectDay(1)">SEG</button>
+    <button class="day-btn" onclick="selectDay(2)">TER</button>
+    <button class="day-btn" onclick="selectDay(3)">QUA</button>
+    <button class="day-btn" onclick="selectDay(4)">QUI</button>
+    <button class="day-btn" onclick="selectDay(5)">SEX</button>
+    <button class="day-btn" onclick="selectDay('all')">VER TUDO</button>
+  </div>
+
+  <div class="schedule-container">
+    <div id="current-time-bar"></div>
+    <div class="time-grid" id="grid-content">
+      <!-- Grid será renderizada via JS -->
+    </div>
+  </div>
+
+  <script>
+    const scheduleData = {
+      1: [ // Segunda
+        { start: "08:00", end: "08:50", sub: "EDF", room: "Pavilhão", type: "edf" },
+        { start: "08:50", end: "09:40", sub: "EDF", room: "Pavilhão", type: "edf" },
+        { start: "09:40", end: "10:10", sub: "Intervalo", type: "break" },
+        { start: "10:10", end: "11:00", sub: "--", type: "free" },
+        { start: "11:00", end: "11:50", sub: "--", type: "free" },
+        { start: "12:00", end: "12:50", sub: "Aplicações Informáticas", room: "B 205", type: "ai" },
+        { start: "12:50", end: "14:00", sub: "Almoço", type: "break" },
+        { start: "14:00", end: "14:50", sub: "Multimédia 1", room: "C 102", type: "m1" },
+        { start: "14:50", end: "15:40", sub: "Multimédia 1", room: "C 102", type: "m1" },
+        { start: "15:50", end: "16:40", sub: "HCART", room: "B 108", type: "hcart" },
+      ],
+      2: [ // Terça
+        { start: "08:00", end: "08:50", sub: "Aplicações Informáticas", room: "B 208", type: "ai" },
+        { start: "08:50", end: "09:40", sub: "Aplicações Informáticas", room: "B 208", type: "ai" },
+        { start: "09:40", end: "10:10", sub: "Intervalo", type: "break" },
+        { start: "10:10", end: "11:00", sub: "--", type: "free" },
+        { start: "11:00", end: "11:50", sub: "--", type: "free" },
+        { start: "12:00", end: "12:50", sub: "Multimédia 5", room: "C 103", type: "m5" },
+        { start: "12:50", end: "13:40", sub: "Multimédia 5", room: "C 103", type: "m5" },
+        { start: "13:40", end: "14:50", sub: "Almoço", type: "break" },
+        { start: "14:50", end: "15:40", sub: "Português", room: "B 107", type: "port" },
+        { start: "15:50", end: "16:40", sub: "Português", room: "B 107", type: "port" },
+        { start: "16:40", end: "17:30", sub: "PAP", room: "B 112/114", type: "pap" },
+      ],
+      3: [ // Quarta
+        { start: "08:00", end: "08:50", sub: "Inglês", room: "B 206", type: "ingles" },
+        { start: "08:50", end: "09:40", sub: "Português", room: "B 111", type: "port" },
+        { start: "09:40", end: "10:10", sub: "Intervalo", type: "break" },
+        { start: "10:10", end: "11:00", sub: "Multimédia 3", room: "C 102", type: "m3" },
+        { start: "11:00", end: "11:50", sub: "Multimédia 3", room: "C 102", type: "m3" },
+        { start: "12:00", end: "12:50", sub: "Multimédia 1", room: "B 206", type: "m1" },
+        { start: "12:50", end: "13:40", sub: "Multimédia 1", room: "B 206", type: "m1" },
+      ],
+      4: [ // Quinta
+        { start: "08:50", end: "09:40", sub: "HCART", room: "C 110", type: "hcart" },
+        { start: "09:40", end: "10:10", sub: "Intervalo", type: "break" },
+        { start: "10:10", end: "11:00", sub: "HCART", room: "C 110", type: "hcart" },
+        { start: "11:00", end: "11:50", sub: "Aplicações Informáticas", room: "B 218", type: "ai" },
+        { start: "11:50", end: "14:50", sub: "Almoço / Livre", type: "break" },
+        { start: "14:50", end: "15:40", sub: "Português", room: "B 207", type: "port" },
+        { start: "15:50", end: "16:40", sub: "Português", room: "B 207", type: "port" },
+        { start: "16:40", end: "18:30", sub: "Multimédia 4", room: "C 102", type: "m4" },
+      ],
+      5: [ // Sexta
+        { start: "08:00", end: "08:50", sub: "Inglês", room: "B 212", type: "ingles" },
+        { start: "08:50", end: "09:40", sub: "Inglês", room: "B 212", type: "ingles" },
+        { start: "09:40", end: "10:10", sub: "Intervalo", type: "break" },
+        { start: "10:10", end: "11:00", sub: "Multimédia 4", room: "C 103", type: "m4" },
+        { start: "11:00", end: "11:50", sub: "Multimédia 4", room: "C 103", type: "m4" },
+        { start: "12:00", end: "12:50", sub: "Multimédia 1", room: "B 213", type: "m1" },
+        { start: "12:50", end: "13:40", sub: "Multimédia 1", room: "B 213", type: "m1" },
+        { start: "13:40", end: "14:50", sub: "Almoço", type: "break" },
+        { start: "14:50", end: "15:40", sub: "Multimédia 2", room: "C 103", type: "m2" },
+        { start: "15:50", end: "16:40", sub: "Multimédia 2", room: "C 103", type: "m2" },
+        { start: "16:40", end: "18:30", sub: "Aplicações Informáticas", room: "B 105", type: "ai" },
+      ]
+    };
+
+    const timeSlots = [
+      "08:00", "08:50", "09:40", "10:10", "11:00", "12:00", "12:50", "13:40", "14:00", "14:50", "15:50", "16:40", "17:30", "18:30"
+    ];
+
+    let currentSelectedDay = new Date().getDay();
+    if (currentSelectedDay === 0 || currentSelectedDay === 6) currentSelectedDay = 1;
+
+    function renderSchedule(day) {
+      const container = document.getElementById('grid-content');
+      container.innerHTML = '';
+
+      const daysToRender = day === 'all' ? [1,2,3,4,5] : [day];
+
+      timeSlots.forEach((time, index) => {
+        if (index === timeSlots.length - 1) return;
+        
+        const row = document.createElement('div');
+        row.className = 'slot-row';
+
+        const timeCol = document.createElement('div');
+        timeCol.className = 'time-col';
+        timeCol.innerHTML = `<span>${time}</span><span style="opacity:0.5">${timeSlots[index+1]}</span>`;
+        row.appendChild(timeCol);
+
+        const contentCol = document.createElement('div');
+        contentCol.className = 'content-col';
+
+        daysToRender.forEach(d => {
+          const item = (scheduleData[d] || []).find(s => s.start === time);
+          const card = document.createElement('div');
+          
+          if (item) {
+            if (item.type === 'free') {
+              card.className = 'card';
+              card.style.opacity = '0.2';
+              card.innerHTML = `<div class="sub">--</div>`;
+            } else if (item.type === 'break') {
+              card.className = 'card break';
+              card.innerText = item.sub;
+            } else {
+              card.className = `card ${item.type}`;
+              card.innerHTML = `<div class="sub">${item.sub}</div>${item.room ? `<div class="room">📍 ${item.room}</div>` : ''}`;
+            }
+          } else {
+            card.className = 'card';
+            card.style.opacity = '0.1';
+          }
+          contentCol.appendChild(card);
+        });
+
+        row.appendChild(contentCol);
+        container.appendChild(row);
+      });
+
+      // Update active button
+      document.querySelectorAll('.day-btn').forEach((btn, idx) => {
+        btn.classList.remove('active');
+        if ((day === 'all' && idx === 5) || (idx + 1 === day)) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    function selectDay(day) {
+      currentSelectedDay = day;
+      renderSchedule(day);
+      updateLiveProgress();
+    }
+
+    function updateLiveProgress() {
+      const now = new Date();
+      const currentDay = now.getDay();
+      const hours = now.getHours();
+      const mins = now.getMinutes();
+      const totalMins = hours * 60 + mins;
+
+      const startDayMins = 8 * 60; // 08:00
+      const endDayMins = 18 * 60 + 30; // 18:30
+
+      const bar = document.getElementById('current-time-bar');
+      const statusMain = document.getElementById('status-main');
+      const statusNext = document.getElementById('status-next');
+
+      // Se for fim de semana ou fora do horário
+      if (currentDay === 0 || currentDay === 6 || totalMins < startDayMins || totalMins > endDayMins) {
+        bar.style.display = 'none';
+        statusMain.innerText = "Fora de Aulas";
+        statusNext.innerText = "Sem aulas agora";
+        return;
+      }
+
+      // Se estiver no dia visualizado
+      if (currentSelectedDay === currentDay || currentSelectedDay === 'all') {
+        const pct = (totalMins - startDayMins) / (endDayMins - startDayMins);
+        const gridHeight = document.getElementById('grid-content').clientHeight;
+        bar.style.top = (gridHeight * pct) + 'px';
+        bar.style.display = 'block';
+      } else {
+        bar.style.display = 'none';
+      }
+
+      // Procurar aula atual
+      const todayClasses = scheduleData[currentDay] || [];
+      let currentClass = null;
+      let nextClass = null;
+
+      for (let i = 0; i < todayClasses.length; i++) {
+        const c = todayClasses[i];
+        const [sh, sm] = c.start.split(':').map(Number);
+        const [eh, em] = c.end ? c.end.split(':').map(Number) : [sh, sm + 50];
+        
+        const cStart = sh * 60 + sm;
+        const cEnd = eh * 60 + em;
+
+        if (totalMins >= cStart && totalMins < cEnd) {
+          currentClass = c;
+          nextClass = todayClasses[i + 1];
+          break;
+        } else if (totalMins < cStart && !nextClass) {
+          nextClass = c;
+        }
+      }
+
+      if (currentClass) {
+        statusMain.innerText = currentClass.sub + (currentClass.room ? ` (${currentClass.room})` : '');
+      } else {
+        statusMain.innerText = "Em Intervalo / Livre";
+      }
+
+      if (nextClass) {
+        statusNext.innerText = `${nextClass.start} - ${nextClass.sub}`;
+      } else {
+        statusNext.innerText = "Fim das Aulas";
+      }
+    }
+
+    // Init
+    selectDay(currentSelectedDay);
+    setInterval(updateLiveProgress, 30000); // 30s
+  </script>
+</body>
+</html>
